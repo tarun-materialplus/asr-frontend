@@ -10,7 +10,7 @@ export default function DragDropUpload() {
     onDrop: (acceptedFiles) => {
       addStagedFiles(acceptedFiles);
     },
-    accept: { "video/*": [], "audio/*": [] },
+    accept: { "video/*": [], "audio/*": [] ,"image/*": [] },
     multiple: true,
   });
 

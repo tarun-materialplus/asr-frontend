@@ -1,88 +1,133 @@
 import { useCallback, useState } from "react";
-import { uploadFiles } from "../services/asr";
+import { processFile, processText } from "../services/asr"; 
 import { useUIStore } from "../store/uiStore";
 import { toast } from "sonner";
 import type { Job } from "../types/asr";
+
+interface UploadOptions {
+  name?: string; 
+  language?: string; 
+  translate?: boolean;
+  file?: File; 
+  options?: string[]; 
+}
 
 interface ApiError {
   response?: {
     data?: {
       message?: string;
+      detail?: string;
     };
   };
 }
 
 export function useUpload() {
   const addJob = useUIStore((s) => s.addJob);
+  const mediaType = useUIStore((s) => s.activeMediaType); 
   const stagedFiles = useUIStore((s) => s.stagedFiles);
   const removeStagedFile = useUIStore((s) => s.removeStagedFile);
 
   const [loading, setLoading] = useState(false);
 
   const startUpload = useCallback(
-    async (opts?: { 
-      name?: string; 
-      description?: string;
-      language?: string;
-      translate?: boolean;
-    }) => {
+    async (opts?: UploadOptions) => {
       setLoading(true);
+      
+      const selectedEndpoints = opts?.options || [];
+
+      if (selectedEndpoints.length === 0) {
+        toast.error("Please select at least one enrichment feature.");
+        setLoading(false);
+        return;
+      }
 
       try {
-        const fd = new FormData();
-        
-        // Add all staged files
-        stagedFiles.forEach((file) => fd.append("files", file));
-        
-        // Add optional parameters
-        if (opts?.name) fd.append("name", opts.name);
-        if (opts?.description) fd.append("description", opts.description);
-        
-        // Add configuration parameters matching API spec
-        fd.append("language", opts?.language || "en-US");
-        fd.append("offset", "0");
-        fd.append("use_whisper", "true");
-        fd.append("split_into_chunks", "true");
-        fd.append("translate", String(opts?.translate || false));
+        let successCount = 0;
 
-        // Make API call
-        const response = await uploadFiles(fd);
+        for (const endpoint of selectedEndpoints) {
+          let response;
+          let jobStatus: Job["status"] = "Queued";
+          let resultData = ""; 
 
-        // Create new job with API response data
-        const newJob: Job = {
-          session_id: response.session_id,
-          container_name: response.container_name,
-          name: opts?.name || stagedFiles[0]?.name,
-          filename: stagedFiles[0]?.name,
-          // Use status from API response, fallback to Queued
-          status: response.status || "Queued",
-          createdAt: new Date().toISOString(),
-          language: (opts?.language || "en-US") as Job["language"],
-        };
+          // --- BRANCH 1: TEXT ANALYSIS (Instant Result) ---
+          if (mediaType === 'text') {
+            const rawText = opts?.name?.replace("Text Analysis: ", "") || "";
+            
+            const textPayload = {
+              text: rawText, 
+              language: opts?.language || "en-US"
+            };
+            
+            response = await processText(endpoint, textPayload);
+            
+            jobStatus = "Completed";
+            resultData = JSON.stringify(response, null, 2);
+          } 
+          
+          else {
+            const filesToUpload = opts?.file ? [opts.file] : stagedFiles;
+            
+            if (filesToUpload.length === 0) continue; 
 
-        // Add to UI store
-        addJob(newJob);
+            const fileToProcess = filesToUpload[0]; 
+            const fd = new FormData();
 
-        // Persist to localStorage
-        const currentHistory = JSON.parse(localStorage.getItem("my_asr_jobs") || "[]");
-        localStorage.setItem("my_asr_jobs", JSON.stringify([newJob, ...currentHistory]));
+            if (endpoint.includes("/image/object_detection-GPT")) {
+                fd.append("image", fileToProcess);
+                
+                response = await processFile(endpoint, fd);
+                
+                jobStatus = "Completed";
+                resultData = JSON.stringify(response, null, 2);
+            } 
+            // --- STANDARD HANDLING (Video/Audio) ---
+            else {
+                // Default logic for /audio endpoints
+                filesToUpload.forEach((file) => fd.append("files", file)); 
+                if (opts?.language) fd.append("language", opts.language);
+                
+                response = await processFile(endpoint, fd);
+                jobStatus = response.status || "Queued";
+            }
+          }
 
-        // Clear staged files
-        for (let i = stagedFiles.length - 1; i >= 0; i--) {
-          removeStagedFile(i);
+          const featureName = endpoint.split('/').pop()?.replace(/[-_]/g, ' ') || "Analysis";
+
+          const newJob: Job = {
+            session_id: response?.session_id || `${mediaType}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+            container_name: response?.container_name,
+            name: `${mediaType === 'text' ? 'Text Input' : (opts?.file?.name || stagedFiles[0]?.name)} (${featureName})`,
+            filename: mediaType === 'text' ? "Raw Text" : (opts?.file?.name || stagedFiles[0]?.name),
+            status: jobStatus, 
+            createdAt: new Date().toISOString(),
+            language: (opts?.language || "en-US") as Job["language"],
+            
+            srtText: resultData 
+          };
+
+          addJob(newJob);
+          
+          const currentHistory = JSON.parse(localStorage.getItem("my_asr_jobs") || "[]");
+          localStorage.setItem("my_asr_jobs", JSON.stringify([newJob, ...currentHistory]));
+          
+          successCount++;
+        }
+
+        if (!opts?.file && mediaType !== 'text') {
+            stagedFiles.forEach((_, i) => removeStagedFile(i)); 
         }
         
-        toast.success("Upload successful! Processing started.");
+        if (successCount > 0) {
+            toast.success(`Success! Result available.`);
+        }
 
       } catch (err: unknown) {
         console.error(err);
         
-        let msg = "Upload failed";
-        
-        // Extract error message from API response
+        let msg = "Processing failed";
         if (err && typeof err === 'object' && 'response' in err) {
           const apiErr = err as ApiError;
-          msg += ": " + (apiErr.response?.data?.message || "Server Error");
+          msg += ": " + (apiErr.response?.data?.message || apiErr.response?.data?.detail || "Server Error");
         } else if (err instanceof Error) {
           msg += ": " + err.message;
         }
@@ -92,7 +137,7 @@ export function useUpload() {
         setLoading(false);
       }
     },
-    [stagedFiles, addJob, removeStagedFile]
+    [stagedFiles, addJob, removeStagedFile, mediaType]
   );
 
   return { startUpload, loading };

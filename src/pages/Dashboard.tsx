@@ -8,23 +8,24 @@ export default function Dashboard() {
   useJobsPoller();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20"> 
       <div className="flex flex-col gap-1">
-        <h2 className="text-2xl font-semibold tracking-tight text-[var(--text-main)]">ASR Processing</h2>
-        <p className="text-sm text-[var(--text-muted)]">Manage your transcription pipeline and view results.</p>
+        <h2 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">ASR Processing</h2>
+        <p className="text-sm text-slate-500">Manage your transcription pipeline and view results.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[calc(100vh-140px)] min-h-[600px]">
-        <div className="lg:col-span-4 flex flex-col gap-6 overflow-y-auto pr-1">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <div className="lg:col-span-4 flex flex-col gap-6">
           <DragDropUpload />
           <StagedFilesList />
         </div>
 
-        <div className="lg:col-span-5 flex flex-col overflow-hidden glass-panel rounded-xl">
+        <div className="lg:col-span-5 flex flex-col h-[calc(100vh-120px)] min-h-[500px] sticky top-6">
            <ProcessingJobs />
         </div>
 
-        <div className="lg:col-span-3 flex flex-col gap-6 overflow-y-auto">
+        <div className="lg:col-span-3 flex flex-col gap-6 sticky top-6">
           <JobDetails />
         </div>
       </div>
