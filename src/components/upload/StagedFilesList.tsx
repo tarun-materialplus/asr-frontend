@@ -7,24 +7,28 @@ import { Languages, FileText, Video, Image as ImageIcon, Music } from "lucide-re
 
 const ENRICHMENT_OPTIONS: Record<string, { label: string; endpoint: string }[]> = {
   video: [
-    // Section: Video
-    { label: "Transcription & Translation (TTSOE)", endpoint: "/video/TTSOE-azure_video_indexer" },
+    // --- VIDEO ONLY ENDPOINTS ---
+    // Removed "/audio/transcribe_multi_language-azure" because it crashes with video files.
+    // Use TTSOE for Video Transcription instead.
+    { label: "Video Indexer (Transcription/Translation)", endpoint: "/video/TTSOE-azure_video_indexer" },
     { label: "Language, Emotion & Rolling Credits", endpoint: "/video/LangDetect_EmotionTag_RollingCredits" },
     { label: "OCR on Video (Azure)", endpoint: "/video/OCR_on_video-azure_indexer" },
-    
-    // Section: video_2
+    // Video 2 Endpoints
     { label: "Video Insights", endpoint: "/video_2/insights/" },
     { label: "Scene Detection", endpoint: "/video_2/detect_scenes/" },
     { label: "Extract Key Frames", endpoint: "/video_2/extract_key_frames/" }
   ],
   audio: [
+    // --- AUDIO ONLY ENDPOINTS ---
     { label: "Transcribe Multi-Language", endpoint: "/audio/transcribe_multi_language-azure" },
     { label: "Syntax Analysis", endpoint: "/audio/Syntax_Analysis" },
-    { label: "Video Indexer (Audio)", endpoint: "/audio/TTSOE-azure_video_indexer/" }
+    { label: "Video Indexer (Audio Mode)", endpoint: "/audio/TTSOE-azure_video_indexer/" },
+    { label: "Language & Emotion Tagging", endpoint: "/audio/LangDetect_EmotionTag_RollingCredits" }
   ],
   image: [
     { label: "Image Description (GPT)", endpoint: "/image/object_detection-GPT" }
   ],
+  // THESE MUST MATCH YOUR CURL COMMANDS EXACTLY:
   text: [
     { label: "NER Extract (GPT)", endpoint: "/text/name_entity_recognition-gpt" },
     { label: "Parts of Speech", endpoint: "/text/parts_of_speech_tagging-gpt" },
@@ -74,7 +78,12 @@ export default function StagedFilesList() {
     if (mediaType === 'text' && !textInput.trim()) return;
 
     startUpload({ 
+      // Keep name for display in the Job List (truncated is fine for display)
       name: mediaType === 'text' ? `Text Analysis: ${textInput.slice(0, 15)}...` : undefined,
+      
+      // Pass full text for the API (CRITICAL FIX)
+      textContent: mediaType === 'text' ? textInput : undefined,
+      
       language: selectedLang, 
       translate: doTranslate,
       options: selectedOptions 

@@ -91,7 +91,7 @@ export const getStatus = async (sessionId: string) => {
   }
 
   try {
-    const res = await api.get(`/get_status/${sessionId}`);
+    const res = await api.get(`/api/get_status/${sessionId}`);
     return res.data;
   } catch (err) {
     console.log("Error fetching real job status:", err);
