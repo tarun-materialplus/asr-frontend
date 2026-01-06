@@ -12,12 +12,12 @@ export default function JobRow({ job, onSelect }: { job: Job; onSelect: (id: str
   const sizeStr = job.filename ? `${((job.filename.length) * 0.5).toFixed(1)}MB` : "N/A";
 
   return (
-    <div 
+    <div
       onClick={() => onSelect(job.session_id)}
       className={clsx(
         "group flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all duration-200",
-        isSelected 
-          ? "bg-white dark:bg-slate-800 border-blue-500 shadow-sm" 
+        isSelected
+          ? "bg-white dark:bg-slate-800 border-blue-500 shadow-sm"
           : "bg-[var(--bg-card)] border-transparent hover:border-[var(--border)] hover:bg-slate-50 dark:hover:bg-slate-800/50"
       )}
     >
@@ -34,10 +34,10 @@ export default function JobRow({ job, onSelect }: { job: Job; onSelect: (id: str
             {job.name || job.filename}
           </span>
           <span className="text-xs text-[var(--text-muted)] truncate">
-             {job.status === 'Running' && job.message 
-                ? <span className="text-blue-500 dark:text-blue-400 animate-pulse">{job.message}</span> 
-                : `${dateStr} • ${sizeStr}`
-             }
+            {job.status === 'Running' && job.message
+              ? <span className="text-blue-500 dark:text-blue-400 animate-pulse">{job.message}</span>
+              : `${dateStr} • ${sizeStr}`
+            }
           </span>
         </div>
       </div>
@@ -47,8 +47,8 @@ export default function JobRow({ job, onSelect }: { job: Job; onSelect: (id: str
           <div className="w-16 hidden sm:block">
             <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
               {job.progress ? (
-                <div 
-                  className="h-full bg-blue-500 rounded-full transition-all duration-500" 
+                <div
+                  className="h-full bg-blue-500 rounded-full transition-all duration-500"
                   style={{ width: `${job.progress}%` }}
                 />
               ) : (
@@ -59,7 +59,7 @@ export default function JobRow({ job, onSelect }: { job: Job; onSelect: (id: str
         )}
 
         <StatusBadge status={job.status} />
-        
+
         <ChevronRight size={16} className={clsx("text-slate-300 transition-transform", isSelected && "rotate-90 text-blue-500")} />
       </div>
     </div>

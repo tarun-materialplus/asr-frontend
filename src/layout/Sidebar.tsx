@@ -7,7 +7,7 @@ const ENRICHMENT_TYPES = [
   { id: "video", label: "Video Analysis", icon: Video },
   { id: "audio", label: "Audio Analysis", icon: Music },
   { id: "image", label: "Image Analysis", icon: Image },
-  { id: "text",  label: "Text Analysis",  icon: FileText },
+  { id: "text", label: "Text Analysis", icon: FileText },
 ];
 
 export default function Sidebar() {
@@ -19,7 +19,7 @@ export default function Sidebar() {
   const handleTypeClick = (type: MediaType) => {
     setType(type);
     if (location.pathname !== "/") {
-        navigate("/");
+      navigate("/");
     }
   };
 
@@ -37,7 +37,7 @@ export default function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto py-6">
         <div className="px-3 mb-6">
-          
+
           <button
             onClick={() => handleTypeClick("video")}
             className={clsx(
@@ -56,8 +56,8 @@ export default function Sidebar() {
                 onClick={() => handleTypeClick(item.id as MediaType)}
                 className={clsx(
                   "group flex w-full items-center gap-3 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-200",
-                  location.pathname === "/" && activeType === item.id 
-                    ? "text-blue-400 bg-blue-500/10" 
+                  location.pathname === "/" && activeType === item.id
+                    ? "text-blue-400 bg-blue-500/10"
                     : "text-slate-500 hover:text-slate-200"
                 )}
               >
@@ -80,10 +80,10 @@ export default function Sidebar() {
 
       <div className="border-t border-slate-800 p-4">
         <NavLink to="/keys" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
-            <Key className="h-4 w-4" /> <span>API Keys</span>
+          <Key className="h-4 w-4" /> <span>API Keys</span>
         </NavLink>
         <NavLink to="/settings" className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition-colors">
-            <Settings className="h-4 w-4" /> <span>Settings</span>
+          <Settings className="h-4 w-4" /> <span>Settings</span>
         </NavLink>
       </div>
     </aside>

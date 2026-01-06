@@ -7,7 +7,7 @@ type UIState = {
   stagedFiles: File[];
   jobs: Job[];
   selectedJobId?: string | null;
-  
+
   activeMediaType: MediaType;
 
   addStagedFiles: (files: File[]) => void;
@@ -15,7 +15,7 @@ type UIState = {
   addJob: (job: Job) => void;
   setJobs: (updater: Job[] | ((prev: Job[]) => Job[])) => void;
   setSelectedJobId: (id?: string | null) => void;
-  
+
   setActiveMediaType: (type: MediaType) => void;
 };
 
@@ -23,7 +23,7 @@ export const useUIStore = create<UIState>((set) => ({
   stagedFiles: [],
   jobs: [],
   selectedJobId: null,
-  
+
   activeMediaType: "video",
 
   addStagedFiles: (files) =>

@@ -1,16 +1,19 @@
 import api from "./api";
 import type { Job } from "../types/asr";
 import { toast } from "sonner";
-export const processFile = async (endpoint: string, fd: FormData) => {
+export const processFile = async (endpoint: string, fd: FormData, isBinary: boolean = false) => {
   const res = await api.post(`/api${endpoint}`, fd, {
     headers: { "Content-Type": "multipart/form-data" },
+    responseType: isBinary ? "blob" : "json"
+
   });
-  return res.data; 
+  return res.data;
 };
 
 export const processText = async (endpoint: string, payload: any) => {
   const res = await api.post(`/api${endpoint}`, payload, {
     headers: { "Content-Type": "application/json" },
+
   });
   return res.data;
 };
@@ -21,7 +24,7 @@ const MOCK_JOBS: Job[] = [
     name: "Q3 Financial Review.mp4",
     filename: "Q3_Financial_Review.mp4",
     status: "Completed",
-    createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(), 
+    createdAt: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
     progress: 100,
     language: "en-US",
     duration: "45:20",
@@ -34,7 +37,7 @@ const MOCK_JOBS: Job[] = [
     name: "Interview_John_Doe_v2.wav",
     filename: "Interview_John_Doe_v2.wav",
     status: "Processing",
-    createdAt: new Date().toISOString(), 
+    createdAt: new Date().toISOString(),
     progress: 45,
     language: "en-GB",
     message: "Transcribing audio...",
@@ -45,7 +48,7 @@ const MOCK_JOBS: Job[] = [
     name: "Corrupted_File_Test.mkv",
     filename: "Corrupted_File_Test.mkv",
     status: "Error",
-    createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(), 
+    createdAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
     progress: 0,
     language: "en-US",
     message: "Unsupported file format or codec."
@@ -68,9 +71,9 @@ export const uploadFiles = async (fd: FormData) => {
     });
     return res.data;
   } catch (err) {
-    console.log("Backend unavailable. Simulating upload.",err);
+    console.log("Backend unavailable. Simulating upload.", err);
     toast.warning("Backend offline. Simulating upload for UI testing.");
-    
+
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({
@@ -101,16 +104,16 @@ export const getStatus = async (sessionId: string) => {
 
 const simulateStatus = (id: string) => {
   const mockJob = MOCK_JOBS.find(j => j.session_id === id);
-  
+
   if (id === "mock_2" || id.startsWith("sim_")) {
     return {
       status: "Processing",
       message: "Transcribing...",
-      progress: Math.floor(Math.random() * 100), 
+      progress: Math.floor(Math.random() * 100),
       folder_name: "mock_folder"
     };
   }
-  
+
   return {
     status: mockJob?.status || "Completed",
     message: mockJob?.message || "Done",
@@ -129,10 +132,10 @@ export const downloadSrts = (container_name: string, folder: string) =>
 export const getLocalJobs = (): Job[] => {
   try {
     const stored = JSON.parse(localStorage.getItem("my_asr_jobs") || "[]");
-    
+
     const storedIds = new Set(stored.map((j: Job) => j.session_id));
     const freshMocks = MOCK_JOBS.filter(m => !storedIds.has(m.session_id));
-    
+
     return [...stored, ...freshMocks];
   } catch {
     return MOCK_JOBS;

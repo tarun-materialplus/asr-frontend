@@ -2,7 +2,7 @@ import Card from "../components/ui/Card";
 import { Clock, HardDrive, DollarSign, TrendingUp, type LucideIcon } from "lucide-react";
 
 export default function UsageAnalytics() {
-  const weeklyUsage = [45, 120, 80, 160, 90, 30, 10]; 
+  const weeklyUsage = [45, 120, 80, 160, 90, 30, 10];
   const maxVal = Math.max(...weeklyUsage);
 
   return (
@@ -27,11 +27,11 @@ export default function UsageAnalytics() {
               <option>Last 30 Days</option>
             </select>
           </div>
-          
+
           <div className="flex-1 flex items-end justify-between gap-4 px-2">
             {weeklyUsage.map((val, i) => (
               <div key={i} className="flex flex-col items-center gap-2 flex-1 group">
-                <div 
+                <div
                   className="w-full bg-blue-100 dark:bg-blue-900/30 rounded-t-sm relative transition-all duration-500 hover:bg-blue-500 group-hover:dark:bg-blue-500"
                   style={{ height: `${(val / maxVal) * 200}px` }}
                 >
@@ -40,14 +40,13 @@ export default function UsageAnalytics() {
                   </div>
                 </div>
                 <span className="text-xs text-slate-400 font-medium">
-                  {['M','T','W','T','F','S','S'][i]}
+                  {['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]}
                 </span>
               </div>
             ))}
           </div>
         </Card>
 
-        {/* Plan Details */}
         <Card>
           <h3 className="font-semibold text-slate-900 dark:text-white mb-4">Current Plan</h3>
           <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 mb-4">
@@ -81,7 +80,7 @@ interface StatsCardProps {
   title: string;
   value: string;
   sub: string;
-  icon: LucideIcon; 
+  icon: LucideIcon;
   color: "blue" | "purple" | "green";
 }
 

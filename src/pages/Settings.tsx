@@ -1,4 +1,3 @@
-/* src/pages/Settings.tsx */
 import { useState } from "react";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -6,12 +5,7 @@ import { useUserStore } from "../store/userStore";
 import { toast } from "sonner";
 
 export default function Settings() {
-  // 1. Get current values and the update function from store
   const { name, email, updateProfile } = useUserStore();
-
-  // 2. Initialize local state from global state.
-  // We do NOT need useEffect here. When the page loads, these lines 
-  // grab the latest data immediately.
   const [localName, setLocalName] = useState(name);
   const [localEmail, setLocalEmail] = useState(email);
 
@@ -20,7 +14,6 @@ export default function Settings() {
       toast.error("Name and Email cannot be empty");
       return;
     }
-    // 3. Update the global store
     updateProfile(localName, localEmail);
     toast.success("Profile updated successfully");
   };
@@ -37,18 +30,18 @@ export default function Settings() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Full Name</label>
-            <input 
+            <input
               value={localName}
               onChange={(e) => setLocalName(e.target.value)}
-              className="w-full p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+              className="w-full p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Email Address</label>
-            <input 
+            <input
               value={localEmail}
               onChange={(e) => setLocalEmail(e.target.value)}
-              className="w-full p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+              className="w-full p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             />
           </div>
         </div>

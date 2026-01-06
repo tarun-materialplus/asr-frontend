@@ -7,28 +7,24 @@ import { Languages, FileText, Video, Image as ImageIcon, Music } from "lucide-re
 
 const ENRICHMENT_OPTIONS: Record<string, { label: string; endpoint: string }[]> = {
   video: [
-    // --- VIDEO ONLY ENDPOINTS ---
-    // Removed "/audio/transcribe_multi_language-azure" because it crashes with video files.
-    // Use TTSOE for Video Transcription instead.
     { label: "Video Indexer (Transcription/Translation)", endpoint: "/video/TTSOE-azure_video_indexer" },
     { label: "Language, Emotion & Rolling Credits", endpoint: "/video/LangDetect_EmotionTag_RollingCredits" },
-    { label: "OCR on Video (Azure)", endpoint: "/video/OCR_on_video-azure_indexer" },
-    // Video 2 Endpoints
+    { label: "OCR on Video (Azure)", endpoint: "/image/OCR_on_video-azure" },
     { label: "Video Insights", endpoint: "/video_2/insights/" },
     { label: "Scene Detection", endpoint: "/video_2/detect_scenes/" },
     { label: "Extract Key Frames", endpoint: "/video_2/extract_key_frames/" }
   ],
   audio: [
-    // --- AUDIO ONLY ENDPOINTS ---
     { label: "Transcribe Multi-Language", endpoint: "/audio/transcribe_multi_language-azure" },
     { label: "Syntax Analysis", endpoint: "/audio/Syntax_Analysis" },
-    { label: "Video Indexer (Audio Mode)", endpoint: "/audio/TTSOE-azure_video_indexer/" },
+    { label: "Video Indexer (Audio)", endpoint: "/audio/TTSOE-azure_video_indexer/" },
     { label: "Language & Emotion Tagging", endpoint: "/audio/LangDetect_EmotionTag_RollingCredits" }
   ],
   image: [
-    { label: "Image Description (GPT)", endpoint: "/image/object_detection-GPT" }
+    { label: "Image Description (GPT)", endpoint: "/image/object_detection-GPT" },
+    { label: "OCR on Image (Azure)", endpoint: "/image/OCR_on_image-azure/" },
+    { label: "OCR on Video (Azure)", endpoint: "/image/OCR_on_video-azure" }
   ],
-  // THESE MUST MATCH YOUR CURL COMMANDS EXACTLY:
   text: [
     { label: "NER Extract (GPT)", endpoint: "/text/name_entity_recognition-gpt" },
     { label: "Parts of Speech", endpoint: "/text/parts_of_speech_tagging-gpt" },
@@ -52,12 +48,12 @@ export default function StagedFilesList() {
   const staged = useUIStore((s) => s.stagedFiles);
   const remove = useUIStore((s) => s.removeStagedFile);
   const mediaType = useUIStore((s) => s.activeMediaType);
-  
+
   const { startUpload, loading } = useUpload();
 
   const [selectedLang, setSelectedLang] = useState("en-US");
   const [doTranslate, setDoTranslate] = useState(false);
-  
+
   const [prevMediaType, setPrevMediaType] = useState(mediaType);
   const [textInput, setTextInput] = useState("");
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
@@ -69,7 +65,7 @@ export default function StagedFilesList() {
   }
 
   const toggleOption = (endpoint: string) => {
-    setSelectedOptions(prev => 
+    setSelectedOptions(prev =>
       prev.includes(endpoint) ? prev.filter(o => o !== endpoint) : [...prev, endpoint]
     );
   };
@@ -77,23 +73,19 @@ export default function StagedFilesList() {
   const handleProcess = () => {
     if (mediaType === 'text' && !textInput.trim()) return;
 
-    startUpload({ 
-      // Keep name for display in the Job List (truncated is fine for display)
+    startUpload({
       name: mediaType === 'text' ? `Text Analysis: ${textInput.slice(0, 15)}...` : undefined,
-      
-      // Pass full text for the API (CRITICAL FIX)
       textContent: mediaType === 'text' ? textInput : undefined,
-      
-      language: selectedLang, 
+      language: selectedLang,
       translate: doTranslate,
-      options: selectedOptions 
+      options: selectedOptions
     });
   };
 
-  const CurrentIcon = mediaType === 'video' ? Video 
-    : mediaType === 'audio' ? Music 
-    : mediaType === 'image' ? ImageIcon 
-    : FileText;
+  const CurrentIcon = mediaType === 'video' ? Video
+    : mediaType === 'audio' ? Music
+      : mediaType === 'image' ? ImageIcon
+        : FileText;
 
   const isFileMode = mediaType !== 'text';
   const hasContent = isFileMode ? staged.length > 0 : textInput.trim().length > 0;
@@ -123,7 +115,7 @@ export default function StagedFilesList() {
         <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 block">
           1. Selected Content
         </label>
-        
+
         {mediaType === 'text' ? (
           <textarea
             value={textInput}
@@ -152,8 +144,8 @@ export default function StagedFilesList() {
                     <div className="text-[10px] text-slate-400">{(f.size / 1024 / 1024).toFixed(2)} MB</div>
                   </div>
                 </div>
-                <button 
-                  onClick={() => remove(i)} 
+                <button
+                  onClick={() => remove(i)}
                   className="text-slate-400 hover:text-red-500 p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                 >
                   ✕
@@ -171,8 +163,8 @@ export default function StagedFilesList() {
         <div className="grid grid-cols-1 gap-2">
           {ENRICHMENT_OPTIONS[mediaType].map((opt) => (
             <label key={opt.endpoint} className="flex items-start gap-3 cursor-pointer group p-3 rounded-lg border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 checked={selectedOptions.includes(opt.endpoint)}
                 onChange={() => toggleOption(opt.endpoint)}
                 className="mt-0.5 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 shrink-0"
@@ -194,7 +186,7 @@ export default function StagedFilesList() {
             <label className="text-xs font-medium text-slate-500">Source Language</label>
             <div className="relative">
               <Languages className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-              <select 
+              <select
                 value={selectedLang}
                 onChange={(e) => setSelectedLang(e.target.value)}
                 className="w-full pl-10 p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
@@ -207,8 +199,8 @@ export default function StagedFilesList() {
           </div>
 
           <label className="flex items-center gap-3 cursor-pointer group">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={doTranslate}
               onChange={(e) => setDoTranslate(e.target.checked)}
               className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
@@ -221,18 +213,13 @@ export default function StagedFilesList() {
       </div>
 
       <div className="mt-6">
-        <Button 
+        <Button
           className="w-full justify-center py-3 text-base shadow-lg shadow-blue-500/20"
-          disabled={isDisabled} 
+          disabled={isDisabled}
           onClick={handleProcess}
         >
           {loading ? "Processing..." : "Start Processing"}
         </Button>
-        {isDisabled && (
-          <p className="text-[10px] text-center text-slate-400 mt-2">
-            Select a file/text AND at least one feature to continue
-          </p>
-        )}
       </div>
     </Card>
   );
