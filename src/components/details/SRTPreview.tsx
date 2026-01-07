@@ -122,7 +122,7 @@ export default function SRTPreview({ srt }: { srt?: string }) {
         return (
           <div className="grid grid-cols-1 gap-3 mt-2">
             {value.map((item, i) => {
-              const headerKey = Object.keys(item).find(k => ['type', 'category', 'label', 'name', 'object'].includes(k.toLowerCase()));
+              const headerKey = Object.keys(item).find(k => ['type', 'category', 'label', 'name', 'brand', 'entity'].includes(k.toLowerCase()));
               const headerValue = headerKey ? item[headerKey] : null;
 
               const bodyKey = Object.keys(item).find(k => ['description', 'text', 'content', 'value'].includes(k.toLowerCase()));
@@ -143,30 +143,21 @@ export default function SRTPreview({ srt }: { srt?: string }) {
                     )}
 
                     {bodyValue && (
-                      <div className="text-slate-700 dark:text-slate-300 leading-relaxed text-xs sm:text-sm">
+                      <div className="text-slate-700 dark:text-slate-300 leading-relaxed text-xs sm:text-sm font-medium">
                         {String(bodyValue)}
                       </div>
                     )}
 
                     {otherKeys.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/50 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
-                        {otherKeys.map(([k, v]) => {
-                          const isComplex = typeof v === 'object';
-                          const displayValue = isComplex ? JSON.stringify(v) : String(v);
-                          const isLong = displayValue.length > 40;
-
-                          return (
-                            <div
-                              key={k}
-                              className={`flex flex-col ${isComplex || isLong ? 'col-span-1 sm:col-span-2' : ''}`}
-                            >
-                              <span className="text-[9px] uppercase font-bold text-slate-400 mb-1">{k.replace(/_/g, " ")}</span>
-                              <span className="text-[11px] text-slate-600 dark:text-slate-400 font-mono break-all whitespace-pre-wrap leading-tight bg-white dark:bg-slate-900/50 p-1.5 rounded border border-slate-100 dark:border-slate-800/50">
-                                {displayValue}
-                              </span>
+                      <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex flex-col gap-3">
+                        {otherKeys.map(([k, v]) => (
+                          <div key={k} className="flex flex-col">
+                            <span className="text-[9px] uppercase font-bold text-slate-400 mb-1.5">{k.replace(/_/g, " ")}</span>
+                            <div className="text-xs text-slate-600 dark:text-slate-300 font-mono break-words whitespace-pre-wrap bg-white dark:bg-slate-900/50 p-2.5 rounded border border-slate-100 dark:border-slate-800/50 w-full block">
+                              {typeof v === 'object' ? JSON.stringify(v) : String(v)}
                             </div>
-                          );
-                        })}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
