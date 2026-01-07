@@ -4,10 +4,15 @@ import Button from "../ui/Button";
 import { useUIStore } from "../../store/uiStore";
 import { useUpload } from "../../hooks/useUpload";
 import { Languages, FileText, Video, Image as ImageIcon, Music } from "lucide-react";
+import clsx from "clsx";
+
+const TTSOE_ENDPOINT = "/video/TTSOE-azure_video_indexer";
+const TTSOE_AUDIO_ENDPOINT = "/audio/TTSOE-azure_video_indexer/";
+const TRANSCRIBE_MULTI_ENDPOINT = "/audio/transcribe_multi_language-azure";
 
 const ENRICHMENT_OPTIONS: Record<string, { label: string; endpoint: string }[]> = {
   video: [
-    { label: "Video Indexer (Transcription/Translation)", endpoint: "/video/TTSOE-azure_video_indexer" },
+    { label: "Video Indexer (Transcription/Translation)", endpoint: TTSOE_ENDPOINT },
     { label: "Language, Emotion & Rolling Credits", endpoint: "/video/LangDetect_EmotionTag_RollingCredits" },
     { label: "OCR on Video (Azure)", endpoint: "/image/OCR_on_video-azure" },
     { label: "Video Insights", endpoint: "/video_2/insights/" },
@@ -15,9 +20,9 @@ const ENRICHMENT_OPTIONS: Record<string, { label: string; endpoint: string }[]> 
     { label: "Extract Key Frames", endpoint: "/video_2/extract_key_frames/" }
   ],
   audio: [
-    { label: "Transcribe Multi-Language", endpoint: "/audio/transcribe_multi_language-azure" },
+    { label: "Transcribe Multi-Language", endpoint: TRANSCRIBE_MULTI_ENDPOINT },
     { label: "Syntax Analysis", endpoint: "/audio/Syntax_Analysis" },
-    { label: "Video Indexer (Audio)", endpoint: "/audio/TTSOE-azure_video_indexer/" },
+    { label: "Video Indexer (Audio Mode)", endpoint: TTSOE_AUDIO_ENDPOINT },
     { label: "Language & Emotion Tagging", endpoint: "/audio/LangDetect_EmotionTag_RollingCredits" }
   ],
   image: [
@@ -52,7 +57,9 @@ export default function StagedFilesList() {
   const { startUpload, loading } = useUpload();
 
   const [selectedLang, setSelectedLang] = useState("en-US");
-  const [doTranslate, setDoTranslate] = useState(false);
+
+  const [ttsoeTask, setTtsoeTask] = useState<"Transcription" | "Translation">("Transcription");
+  const [multiLangChoice, setMultiLangChoice] = useState("English");
 
   const [prevMediaType, setPrevMediaType] = useState(mediaType);
   const [textInput, setTextInput] = useState("");
@@ -62,6 +69,8 @@ export default function StagedFilesList() {
     setPrevMediaType(mediaType);
     setSelectedOptions([]);
     setTextInput("");
+    setTtsoeTask("Transcription");
+    setMultiLangChoice("English");
   }
 
   const toggleOption = (endpoint: string) => {
@@ -73,11 +82,17 @@ export default function StagedFilesList() {
   const handleProcess = () => {
     if (mediaType === 'text' && !textInput.trim()) return;
 
+    const isTtsoeSelected = selectedOptions.includes(TTSOE_ENDPOINT) || selectedOptions.includes(TTSOE_AUDIO_ENDPOINT);
+    const shouldTranslate = isTtsoeSelected && ttsoeTask === "Translation";
+
+    const isMultiLangSelected = selectedOptions.includes(TRANSCRIBE_MULTI_ENDPOINT);
+    const finalLanguage = isMultiLangSelected ? multiLangChoice : selectedLang;
+
     startUpload({
       name: mediaType === 'text' ? `Text Analysis: ${textInput.slice(0, 15)}...` : undefined,
       textContent: mediaType === 'text' ? textInput : undefined,
-      language: selectedLang,
-      translate: doTranslate,
+      language: finalLanguage,
+      translate: shouldTranslate,
       options: selectedOptions
     });
   };
@@ -161,19 +176,69 @@ export default function StagedFilesList() {
           2. Enrichment Features
         </label>
         <div className="grid grid-cols-1 gap-2">
-          {ENRICHMENT_OPTIONS[mediaType].map((opt) => (
-            <label key={opt.endpoint} className="flex items-start gap-3 cursor-pointer group p-3 rounded-lg border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all">
-              <input
-                type="checkbox"
-                checked={selectedOptions.includes(opt.endpoint)}
-                onChange={() => toggleOption(opt.endpoint)}
-                className="mt-0.5 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 shrink-0"
-              />
-              <span className="text-sm text-slate-700 dark:text-slate-300 leading-tight group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors">
-                {opt.label}
-              </span>
-            </label>
-          ))}
+          {ENRICHMENT_OPTIONS[mediaType].map((opt) => {
+            const isSelected = selectedOptions.includes(opt.endpoint);
+            const isTtsoe = opt.endpoint === TTSOE_ENDPOINT || opt.endpoint === TTSOE_AUDIO_ENDPOINT;
+            const isMultiLang = opt.endpoint === TRANSCRIBE_MULTI_ENDPOINT;
+
+            return (
+              <div key={opt.endpoint} className={clsx("rounded-lg border transition-all", isSelected ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/10 dark:border-blue-700" : "border-slate-100 dark:border-slate-800")}>
+                <label className="flex items-center gap-3 cursor-pointer group p-3">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleOption(opt.endpoint)}
+                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 shrink-0"
+                  />
+                  <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">
+                    {opt.label}
+                  </span>
+                </label>
+
+                {isSelected && isTtsoe && (
+                  <div className="px-3 pb-3 ml-7 flex gap-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="ttsoe_task"
+                        checked={ttsoeTask === "Transcription"}
+                        onChange={() => setTtsoeTask("Transcription")}
+                        className="w-3.5 h-3.5 text-blue-600 focus:ring-blue-500 border-slate-300"
+                      />
+                      <span className="text-xs text-slate-600 dark:text-slate-400">Transcription</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="ttsoe_task"
+                        checked={ttsoeTask === "Translation"}
+                        onChange={() => setTtsoeTask("Translation")}
+                        className="w-3.5 h-3.5 text-blue-600 focus:ring-blue-500 border-slate-300"
+                      />
+                      <span className="text-xs text-slate-600 dark:text-slate-400">Translation</span>
+                    </label>
+                  </div>
+                )}
+
+                {isSelected && isMultiLang && (
+                  <div className="px-3 pb-3 ml-7 flex flex-wrap gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                    {['English', 'Chinese', 'Tamil', 'Malaysian'].map(lang => (
+                      <label key={lang} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="multi_lang"
+                          checked={multiLangChoice === lang}
+                          onChange={() => setMultiLangChoice(lang)}
+                          className="w-3.5 h-3.5 text-blue-600 focus:ring-blue-500 border-slate-300"
+                        />
+                        <span className="text-xs text-slate-600 dark:text-slate-400">{lang}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -189,26 +254,20 @@ export default function StagedFilesList() {
               <select
                 value={selectedLang}
                 onChange={(e) => setSelectedLang(e.target.value)}
-                className="w-full pl-10 p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
+                disabled={selectedOptions.includes(TRANSCRIBE_MULTI_ENDPOINT)}
+                className={clsx("w-full pl-10 p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none appearance-none",
+                  selectedOptions.includes(TRANSCRIBE_MULTI_ENDPOINT) && "opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800"
+                )}
               >
                 {API_LANGUAGES.map((l) => (
                   <option key={l.code} value={l.code}>{l.label}</option>
                 ))}
               </select>
             </div>
+            {selectedOptions.includes(TRANSCRIBE_MULTI_ENDPOINT) && (
+              <p className="text-[10px] text-blue-600 mt-1">Using language selected in 'Enrichment Features' above.</p>
+            )}
           </div>
-
-          <label className="flex items-center gap-3 cursor-pointer group">
-            <input
-              type="checkbox"
-              checked={doTranslate}
-              onChange={(e) => setDoTranslate(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="text-sm text-slate-700 dark:text-slate-300 group-hover:text-blue-600 transition-colors">
-              Translate Output to English
-            </span>
-          </label>
         </div>
       </div>
 

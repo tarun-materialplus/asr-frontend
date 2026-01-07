@@ -18,7 +18,6 @@ const getErrorMessage = (err: any) => {
   if (err.response && err.response.data) {
     const data = err.response.data;
     if (data instanceof Blob) return "Server returned a file or connection failed.";
-
     if (data.detail && Array.isArray(data.detail)) {
       return data.detail.map((e: any) => `${e.loc?.join('.')} - ${e.msg}`).join(', ');
     }
@@ -55,12 +54,10 @@ export function useUpload() {
           let jobStatus: Job["status"] = "Queued";
           let resultData = "";
 
+          // --- BRANCH 1: TEXT ANALYSIS ---
           if (mediaType === 'text') {
             const rawText = opts?.textContent || opts?.name?.replace("Text Analysis: ", "") || "";
-            const textPayload = {
-              text: rawText
-            };
-
+            const textPayload = { text: rawText };
             response = await processText(endpoint, textPayload);
             jobStatus = "Completed";
             resultData = JSON.stringify(response, null, 2);
@@ -73,9 +70,11 @@ export function useUpload() {
             const fileToProcess = filesToUpload[0];
             const fd = new FormData();
 
-            // 1. KEY SELECTION
             let fileKey = "file";
-            if (endpoint.includes("/image/")) {
+
+            if (endpoint.includes("OCR_on_video")) {
+              fileKey = "video";
+            } else if (endpoint.includes("/image/")) {
               fileKey = "image";
             } else if (endpoint.includes("TTSOE")) {
               fileKey = "file";
@@ -85,11 +84,7 @@ export function useUpload() {
 
             fd.append(fileKey, fileToProcess);
 
-            const supportsMetadata =
-              endpoint.includes("TTSOE") ||
-              endpoint.includes("transcribe") ||
-              endpoint.includes("LangDetect") ||
-              endpoint.includes("Syntax");
+            const supportsMetadata = endpoint.includes("TTSOE") || endpoint.includes("transcribe") || endpoint.includes("LangDetect") || endpoint.includes("Syntax");
 
             if (supportsMetadata) {
               let langToSend = opts?.language || "en-US";
@@ -114,16 +109,15 @@ export function useUpload() {
             }
 
             const isBinary =
-              endpoint.includes("/video_2/") ||
+              (endpoint.includes("/video_2/") && !endpoint.includes("insights")) ||
               endpoint.includes("extract_key_frames") ||
-              endpoint.includes("OCR_on_video") ||
-              endpoint.includes("insights");
+              endpoint.includes("detect_scenes");
 
             response = await processFile(endpoint, fd, isBinary);
 
             if (isBinary) {
-
-              resultData = URL.createObjectURL(response);
+              const url = URL.createObjectURL(response);
+              resultData = url;
               jobStatus = "Completed";
             } else {
               if (!response.session_id && Object.keys(response).length > 0) {
@@ -136,7 +130,6 @@ export function useUpload() {
           }
 
           const featureName = endpoint.split('/').pop()?.replace(/[-_]/g, ' ') || "Analysis";
-
           const newJob: Job = {
             session_id: (typeof response === 'object' && response.session_id) ? response.session_id : `${mediaType}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
             container_name: (typeof response === 'object') ? response.container_name : undefined,
@@ -159,7 +152,6 @@ export function useUpload() {
               console.warn("Storage full");
             }
           }
-
           successCount++;
         }
 
